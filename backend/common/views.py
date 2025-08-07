@@ -1,5 +1,6 @@
 """all API views"""
 
+import logging
 from appsettings.src.config import ReleaseVersion
 from appsettings.src.reindex import ReindexProgress
 from common.serializers import (
@@ -35,14 +36,48 @@ class PingView(ApiBaseView):
     )
     def get(request):
         """get pong"""
-        data = {
-            "response": "pong",
-            "user": request.user.id,
-            "version": ReleaseVersion().get_local_version(),
-            "ta_update": ReleaseVersion().get_update(),
-        }
-        serializer = PingSerializer(data)
-        return Response(serializer.data)
+        logger = logging.getLogger(__name__)
+        
+        # Debug incoming request
+        logger.info(f"🎯 [PING] Received /api/ping request from {request.META.get('REMOTE_ADDR')}")
+        logger.debug(f"📡 [PING] Request method: {request.method}")
+        logger.debug(f"🌐 [PING] Request headers: {dict(request.headers)}")
+        logger.debug(f"🔑 [PING] Request user: {request.user} (authenticated: {request.user.is_authenticated})")
+        logger.debug(f"📝 [PING] Request META: {{
+            'CONTENT_TYPE': {request.META.get('CONTENT_TYPE')},
+            'HTTP_ACCEPT': {request.META.get('HTTP_ACCEPT')},
+            'HTTP_USER_AGENT': {request.META.get('HTTP_USER_AGENT')},
+            'HTTP_ORIGIN': {request.META.get('HTTP_ORIGIN')},
+            'HTTP_REFERER': {request.META.get('HTTP_REFERER')},
+            'CSRF_COOKIE': {request.META.get('CSRF_COOKIE')}
+        }}")
+        
+        try:
+            # Check authentication state
+            if request.user.is_anonymous:
+                logger.warning("⚠️ [PING] User is anonymous - authentication required")
+            else:
+                logger.info(f"✅ [PING] User authenticated: ID={request.user.id}, username={request.user.username}")
+            
+            # Build response data
+            data = {
+                "response": "pong",
+                "user": request.user.id if request.user.is_authenticated else None,
+                "version": ReleaseVersion().get_local_version(),
+                "ta_update": ReleaseVersion().get_update(),
+            }
+            logger.debug(f"📄 [PING] Response data: {data}")
+            
+            # Serialize response
+            serializer = PingSerializer(data)
+            logger.info("🚀 [PING] Successfully returning pong response")
+            
+            return Response(serializer.data)
+            
+        except Exception as e:
+            logger.error(f"❌ [PING] Exception in PingView: {type(e).__name__}: {str(e)}")
+            logger.error(f"🔍 [PING] Exception traceback:", exc_info=True)
+            raise
 
 
 class RefreshView(ApiBaseView):

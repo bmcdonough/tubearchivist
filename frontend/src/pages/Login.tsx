@@ -41,29 +41,108 @@ const Login = () => {
 
   useEffect(() => {
     let retryCount = 0;
+    const startTime = Date.now();
+
+    console.log('🚀 [Backend Check] Starting backend connection monitoring...');
 
     const backendCheckInterval = setInterval(async () => {
+      const attemptTime = Date.now();
+      const elapsedSeconds = Math.round((attemptTime - startTime) / 1000);
+      
+      console.log(`⏳ [Backend Check] Attempt #${retryCount + 1} (${elapsedSeconds}s elapsed)`);
+      
       try {
         const auth = await loadAuth();
+        const responseTime = Date.now() - attemptTime;
+        
+        console.log(`📡 [Backend Check] Response received (${responseTime}ms):`, {
+          status: auth.status,
+          statusText: auth.statusText,
+          ok: auth.ok,
+          url: auth.url,
+          headers: {
+            'content-type': auth.headers.get('content-type'),
+            'set-cookie': auth.headers.get('set-cookie') ? '[present]' : '[none]'
+          }
+        });
 
-        const authData = await auth.json();
+        let authData;
+        try {
+          authData = await auth.json();
+          console.log('📄 [Backend Check] Response data parsed:', authData);
+        } catch (parseError) {
+          console.error('❌ [Backend Check] Failed to parse JSON response:', parseError);
+          console.log('📝 [Backend Check] Raw response body (first 500 chars):', await auth.text().then(t => t.substring(0, 500)));
+          throw new Error(`JSON parse failed: ${parseError instanceof Error ? parseError.message : String(parseError)}`);
+        }
 
         if (auth.status === 403) {
+          console.log('🔒 [Backend Check] Authentication required (403) - Backend ready, showing login form');
+          console.log('✅ [Backend Check] SUCCESS: Backend is accessible, stopping connection checks');
           setWaitingForBackend(false);
           clearInterval(backendCheckInterval);
+          return;
         }
 
         if (authData.response === 'pong') {
+          console.log('🎯 [Backend Check] Received pong response - User already authenticated');
+          console.log('✅ [Backend Check] SUCCESS: Redirecting to home page');
           setWaitingForBackend(false);
           clearInterval(backendCheckInterval);
-
           navigate(Routes.Home);
+          return;
         }
+
+        // Unexpected success case
+        console.warn('⚠️ [Backend Check] Unexpected response:', {
+          status: auth.status,
+          data: authData,
+          willContinueChecking: true
+        });
+        
       } catch (error) {
-        console.log('Checking backend availability: ', error);
+        const responseTime = Date.now() - attemptTime;
         retryCount += 1;
+        
+        // Detailed error logging
+        const errorInfo = {
+          message: error instanceof Error ? error.message : String(error),
+          name: error instanceof Error ? error.name : typeof error,
+          stack: error instanceof Error ? error.stack : undefined,
+          attemptNumber: retryCount,
+          responseTime: `${responseTime}ms`,
+          elapsedTime: `${elapsedSeconds}s`,
+          errorType: 'EXCEPTION_CAUGHT'
+        };
+        
+        console.error(`❌ [Backend Check] Exception caught - TRIGGERING "waiting for backend":`, errorInfo);
+        
+        // Specific error type analysis
+        if (error instanceof TypeError && error.message.includes('fetch')) {
+          console.error('🌐 [Backend Check] Network/Fetch error detected - likely connection issue');
+        } else if (error instanceof Error && error.name === 'AbortError') {
+          console.error('⏰ [Backend Check] Request timeout detected');
+        } else if (error instanceof Error && error.message.includes('CORS')) {
+          console.error('🚫 [Backend Check] CORS error detected');
+        } else if (error instanceof Error && error.message.includes('JSON')) {
+          console.error('📋 [Backend Check] JSON parsing error - backend returned non-JSON response');
+        } else {
+          console.error('❓ [Backend Check] Unknown error type');
+        }
+        
+        console.log(`🔄 [Backend Check] Setting waitingForBackend=true, retryCount=${retryCount}`);
         setWaitedCount(retryCount);
         setWaitingForBackend(true);
+        
+        if (retryCount === 1) {
+          console.log('ℹ️ [Backend Check] First failure - this is normal during startup');
+        } else if (retryCount === 5) {
+          console.warn('⚠️ [Backend Check] 5 failures - backend may be starting up or misconfigured');
+        } else if (retryCount === 10) {
+          console.warn('🔧 [Backend Check] 10 failures - "Having issues?" UI will appear on next failure');
+        } else if (retryCount > 10) {
+          console.warn(`🆘 ${retryCount} failures - "Having issues?" UI should be visible`);
+        }
       }
     }, 1000);
 
