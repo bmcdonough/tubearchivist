@@ -143,7 +143,8 @@ class VideoDownloader(DownloaderBase):
             message = "processing"
 
         if self.task:
-            title = response["info_dict"]["title"]
+            # Safely get the title with a default value for subtitle downloads
+            title = response.get("info_dict", {}).get("title", "Downloading")
             self.task.send_progress([title, message], progress=progress)
 
     def _build_obs(self):
