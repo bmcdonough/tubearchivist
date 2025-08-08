@@ -43,14 +43,15 @@ class PingView(ApiBaseView):
         logger.debug(f"📡 [PING] Request method: {request.method}")
         logger.debug(f"🌐 [PING] Request headers: {dict(request.headers)}")
         logger.debug(f"🔑 [PING] Request user: {request.user} (authenticated: {request.user.is_authenticated})")
-        logger.debug(f"📝 [PING] Request META: {{
+        meta_info = f"""📝 [PING] Request META: {{
             'CONTENT_TYPE': {request.META.get('CONTENT_TYPE')},
             'HTTP_ACCEPT': {request.META.get('HTTP_ACCEPT')},
             'HTTP_USER_AGENT': {request.META.get('HTTP_USER_AGENT')},
             'HTTP_ORIGIN': {request.META.get('HTTP_ORIGIN')},
             'HTTP_REFERER': {request.META.get('HTTP_REFERER')},
             'CSRF_COOKIE': {request.META.get('CSRF_COOKIE')}
-        }}")
+        }}"""
+        logger.debug(meta_info)
         
         try:
             # Check authentication state
