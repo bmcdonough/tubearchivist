@@ -57,6 +57,7 @@ const SettingsApplication = () => {
   const [downloadsExtractorLang, setDownloadsExtractorLang] = useState<string | null>(null);
   const [embedMetadata, setEmbedMetadata] = useState(false);
   const [embedThumbnail, setEmbedThumbnail] = useState(false);
+  const [mkvFormat, setMkvFormat] = useState(false);
 
   // Subtitles
   const [subtitleLang, setSubtitleLang] = useState<string | null>(null);
@@ -116,6 +117,7 @@ const SettingsApplication = () => {
     setDownloadsExtractorLang(appSettingsConfigData?.downloads.extractor_lang || null);
     setEmbedMetadata(appSettingsConfigData?.downloads.add_metadata || false);
     setEmbedThumbnail(appSettingsConfigData?.downloads.add_thumbnail || false);
+    setMkvFormat(appSettingsConfigData?.downloads.mkv_format || false);
 
     // Subtitles
     setSubtitleLang(appSettingsConfigData?.downloads.subtitle || null);
@@ -462,10 +464,15 @@ const SettingsApplication = () => {
                         </li>
                       </ul>
                     </li>
-                    <li>Embedding metadata adds additional metadata directly to the mp4 file.</li>
+                    <li>Embedding metadata adds additional metadata directly to the media file.</li>
                     <li>
-                      Embedding the thumbnail embeds the video thumbnail as a cover.jpg to the mp4
+                      Embedding the thumbnail embeds the video thumbnail as a cover.jpg to the media
                       file.
+                    </li>
+                    <li>
+                      MKV File Format changes the container format from MP4 to MKV. MKV supports more
+                      audio and video codecs, and has better subtitle support. Enable this if you need
+                      these advanced features or want to preserve more metadata.
                     </li>
                   </ul>
                 </div>
@@ -526,6 +533,16 @@ const SettingsApplication = () => {
                 <ToggleConfig
                   name="downloads.add_thumbnail"
                   value={embedThumbnail}
+                  updateCallback={handleUpdateConfig}
+                />
+              </div>
+              <div className="settings-box-wrapper">
+                <div>
+                  <p>MKV File Format</p>
+                </div>
+                <ToggleConfig
+                  name="downloads.mkv_format"
+                  value={mkvFormat}
                   updateCallback={handleUpdateConfig}
                 />
               </div>

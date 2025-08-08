@@ -75,7 +75,9 @@ class YoutubeSubtitle:
                 continue
 
             video_media_url = self.video.json_data["media_url"]
-            media_url = video_media_url.replace(".mp4", f".{lang}.vtt")
+            # Handle both mp4 and mkv extensions
+            base_name, _ = os.path.splitext(video_media_url)
+            media_url = f"{base_name}.{lang}.vtt"
             if not all_formats:
                 # no subtitles found
                 continue

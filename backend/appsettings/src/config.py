@@ -40,6 +40,7 @@ class DownloadsConfigType(TypedDict):
     subtitle_source: Literal["user", "auto"] | None
     subtitle_index: bool
     merge_subtitle: bool
+    mkv_format: bool
     comment_max: str | None
     comment_sort: Literal["top", "new"] | None
     cookie_import: bool
@@ -91,6 +92,7 @@ class AppConfig:
             "subtitle_source": None,
             "subtitle_index": False,
             "merge_subtitle": False,
+            "mkv_format": False,
             "comment_max": None,
             "comment_sort": "top",
             "cookie_import": False,

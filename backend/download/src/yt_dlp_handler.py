@@ -154,9 +154,13 @@ class VideoDownloader(DownloaderBase):
 
     def _build_obs_basic(self):
         """initial obs"""
+        # Determine output format based on mkv_format setting
+        output_format = "mkv" if self.config["downloads"]["mkv_format"] else "mp4"
+        
+        # Basic configuration
         self.obs = {
-            "merge_output_format": "mp4",
-            "outtmpl": (self.CACHE_DIR + "/download/%(id)s.mp4"),
+            "merge_output_format": output_format,
+            "outtmpl": (self.CACHE_DIR + f"/download/%(id)s.{output_format}"),
             "progress_hooks": [self._progress_hook],
             "noprogress": True,
             "continuedl": True,
@@ -164,6 +168,18 @@ class VideoDownloader(DownloaderBase):
             "noplaylist": True,
             "color": "no_color",
         }
+        
+        # Configure subtitle settings
+        subtitle_language = self.config["downloads"]["subtitle"]
+        if subtitle_language:
+            # If subtitle language is set, enable writing and embedding subtitles
+            self.obs["writesubtitles"] = True
+            self.obs["embedsubtitles"] = True
+            self.obs["subtitleslangs"] = [s.strip() for s in subtitle_language.split(",")]
+        else:
+            # If subtitle language is not set, disable subtitle features
+            self.obs["writesubtitles"] = False
+            self.obs["embedsubtitles"] = False
 
     def _build_obs_user(self):
         """build user customized options"""
@@ -236,7 +252,8 @@ class VideoDownloader(DownloaderBase):
         if self.obs["writethumbnail"]:
             # webp files don't get cleaned up automatically
             all_cached = ignore_filelist(os.listdir(dl_cache))
-            to_clean = [i for i in all_cached if not i.endswith(".mp4")]
+            output_format = "mkv" if self.config["downloads"]["mkv_format"] else "mp4"
+            to_clean = [i for i in all_cached if not i.endswith(f"."+output_format)]
             for file_name in to_clean:
                 file_path = os.path.join(dl_cache, file_name)
                 os.remove(file_path)
@@ -262,7 +279,8 @@ class VideoDownloader(DownloaderBase):
             if host_uid and host_gid:
                 os.chown(folder, host_uid, host_gid)
         # move media file
-        media_file = vid_dict["youtube_id"] + ".mp4"
+        output_format = "mkv" if self.config["downloads"]["mkv_format"] else "mp4"
+        media_file = vid_dict["youtube_id"] + f".{output_format}"
         old_path = os.path.join(self.CACHE_DIR, "download", media_file)
         new_path = os.path.join(self.MEDIA_DIR, vid_dict["media_url"])
         # move media file and fix permission
