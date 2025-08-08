@@ -14,12 +14,8 @@ from appsettings.src.config import AppConfig
 from channel.src.index import YoutubeChannel
 from common.src.env_settings import EnvironmentSettings
 from common.src.es_connect import ElasticWrap, IndexPaginate
-from common.src.helper import (
-    get_channel_overwrites,
-    get_playlists,
-    ignore_filelist,
-    rand_sleep,
-)
+from common.src.helper import (get_channel_overwrites, get_playlists,
+                               ignore_filelist, rand_sleep)
 from common.src.ta_redis import RedisQueue
 from download.src.queue import PendingList
 from download.src.yt_dlp_base import YtWrap
