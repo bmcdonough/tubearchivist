@@ -14,8 +14,12 @@ from appsettings.src.config import AppConfig
 from channel.src.index import YoutubeChannel
 from common.src.env_settings import EnvironmentSettings
 from common.src.es_connect import ElasticWrap, IndexPaginate
-from common.src.helper import (get_channel_overwrites, get_playlists,
-                               ignore_filelist, rand_sleep)
+from common.src.helper import (
+    get_channel_overwrites,
+    get_playlists,
+    ignore_filelist,
+    rand_sleep,
+)
 from common.src.ta_redis import RedisQueue
 from download.src.queue import PendingList
 from download.src.yt_dlp_base import YtWrap
@@ -152,7 +156,7 @@ class VideoDownloader(DownloaderBase):
         """initial obs"""
         # Determine output format based on mkv_format setting
         output_format = "mkv" if self.config["downloads"]["mkv_format"] else "mp4"
-        
+
         # Basic configuration
         self.obs = {
             "merge_output_format": output_format,
@@ -164,14 +168,16 @@ class VideoDownloader(DownloaderBase):
             "noplaylist": True,
             "color": "no_color",
         }
-        
+
         # Configure subtitle settings
         subtitle_language = self.config["downloads"]["subtitle"]
         if subtitle_language:
             # If subtitle language is set, enable writing and embedding subtitles
             self.obs["writesubtitles"] = True
             self.obs["embedsubtitles"] = True
-            self.obs["subtitleslangs"] = [s.strip() for s in subtitle_language.split(",")]
+            self.obs["subtitleslangs"] = [
+                s.strip() for s in subtitle_language.split(",")
+            ]
         else:
             # If subtitle language is not set, disable subtitle features
             self.obs["writesubtitles"] = False
@@ -186,9 +192,7 @@ class VideoDownloader(DownloaderBase):
             format_sort_list = [i.strip() for i in format_sort.split(",")]
             self.obs["format_sort"] = format_sort_list
         if self.config["downloads"]["limit_speed"]:
-            self.obs["ratelimit"] = (
-                self.config["downloads"]["limit_speed"] * 1024
-            )
+            self.obs["ratelimit"] = self.config["downloads"]["limit_speed"] * 1024
 
         throttle = self.config["downloads"]["throttledratelimit"]
         if throttle:
@@ -249,7 +253,7 @@ class VideoDownloader(DownloaderBase):
             # webp files don't get cleaned up automatically
             all_cached = ignore_filelist(os.listdir(dl_cache))
             output_format = "mkv" if self.config["downloads"]["mkv_format"] else "mp4"
-            to_clean = [i for i in all_cached if not i.endswith(f"."+output_format)]
+            to_clean = [i for i in all_cached if not i.endswith(f"." + output_format)]
             for file_name in to_clean:
                 file_path = os.path.join(dl_cache, file_name)
                 os.remove(file_path)
@@ -267,9 +271,7 @@ class VideoDownloader(DownloaderBase):
         host_uid = EnvironmentSettings.HOST_UID
         host_gid = EnvironmentSettings.HOST_GID
         # make folder
-        folder = os.path.join(
-            self.MEDIA_DIR, vid_dict["channel"]["channel_id"]
-        )
+        folder = os.path.join(self.MEDIA_DIR, vid_dict["channel"]["channel_id"])
         if not os.path.exists(folder):
             os.makedirs(folder)
             if host_uid and host_gid:
