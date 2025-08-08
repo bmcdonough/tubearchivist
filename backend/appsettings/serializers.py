@@ -50,6 +50,8 @@ class AppConfigDownloadsSerializer(
         choices=["auto", "user"], allow_null=True
     )
     subtitle_index = serializers.BooleanField()
+    merge_subtitle = serializers.BooleanField()
+    mkv_format = serializers.BooleanField()
     comment_max = serializers.CharField(allow_null=True)
     comment_sort = serializers.ChoiceField(
         choices=["top", "new"], allow_null=True
