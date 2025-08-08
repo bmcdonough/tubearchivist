@@ -46,23 +46,90 @@ class YoutubeSubtitle:
             print(f"{self.video.youtube_id}: no subtitles requested, skipping")
             return False
 
+        print(f"{self.video.youtube_id}: fetching user-provided subtitles")
         available_subtitles = self._get_all_subtitles("user")
-        if self.video.config["downloads"]["subtitle_source"] == "auto":
-            for lang, auto_cap in self._get_all_subtitles("auto").items():
+        print(
+            f"{self.video.youtube_id}: found "
+            f"{len(available_subtitles)} user subtitle languages"
+        )
+
+        subtitle_source = self.video.config["downloads"]["subtitle_source"]
+        print(
+            f"{self.video.youtube_id}: subtitle source config setting: "
+            f"{subtitle_source}"
+        )
+
+        if subtitle_source == "auto":
+            print(
+                f"{self.video.youtube_id}: "
+                f"auto subtitles enabled, checking for auto captions"
+            )
+            auto_subtitles = self._get_all_subtitles("auto")
+            print(
+                f"{self.video.youtube_id}: found "
+                f"{len(auto_subtitles)} auto caption languages"
+            )
+
+            added_count = 0
+            for lang, auto_cap in auto_subtitles.items():
                 if lang not in available_subtitles:
+                    print(
+                        f"{self.video.youtube_id}: "
+                        f"adding auto caption for language '{lang}'"
+                    )
                     available_subtitles[lang] = auto_cap
+                    added_count += 1
+            print(
+                f"{self.video.youtube_id}: added "
+                f"{added_count} auto captions not available in user subtitles"
+            )
 
         all_sub_langs = tuple(available_subtitles.keys())
+        print(
+            f"{self.video.youtube_id}: total available subtitle languages: "
+            f"{len(all_sub_langs)}"
+        )
+        if all_sub_langs:
+            print(
+                f"{self.video.youtube_id}: available languages: "
+                f"{', '.join(all_sub_langs)}"
+            )
+
         relevant_subtitles = False
         try:
-            relevant_subtitles = [
-                available_subtitles[lang]
-                for lang in orderedSet_from_options(
-                    self.languages, {"all": all_sub_langs}, use_regex=True
-                )
-            ]
+            print(
+                f"{self.video.youtube_id}: "
+                f"filtering subtitles based on requested languages:"
+                f" {self.languages}"
+            )
+            ordered_langs = orderedSet_from_options(
+                self.languages, {"all": all_sub_langs}, use_regex=True
+            )
+            print(
+                f"{self.video.youtube_id}: languages after filtering: "
+                f"{ordered_langs}"
+            )
+
+            relevant_subtitles = [available_subtitles[lang] for lang in ordered_langs]
+            print(
+                f"{self.video.youtube_id}: found "
+                f"{len(relevant_subtitles)} relevant subtitle tracks"
+            )
         except re.error as e:
-            raise ValueError(f"wrong regex in subtitle config: {e.pattern}")
+            error_msg = f"wrong regex in subtitle config: {e.pattern}"
+            print(f"{self.video.youtube_id}: ERROR - {error_msg}")
+            raise ValueError(error_msg)
+
+        if relevant_subtitles:
+            print(
+                f"{self.video.youtube_id}: returning "
+                f"{len(relevant_subtitles)} subtitle tracks for download"
+            )
+        else:
+            print(
+                f"{self.video.youtube_id}: "
+                f"no matching subtitles found for requested languages"
+            )
 
         return relevant_subtitles
 
