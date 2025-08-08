@@ -304,3 +304,12 @@ And then add the option to the user settings in the appropriate configuration fi
 3. **Integration with merge_output_format**: When both options are specified, you may need to ensure they don't conflict. In most cases, they should work together seamlessly when specifying the same output format.
 
 4. **User Control**: Consider making this an optional setting that users can enable/disable based on their specific needs and hardware capabilities.
+
+# example
+```shell
+yt-dlp -f bestvideo+bestaudio[acodec*=mp4a] \
+  --merge-output-format mkv \
+  --write-subs --embed-subs --sub-lang en-US \
+  -o "%(title)s.%(ext)s" \
+  "https://youtube.com/watch?v=1VRgZEwf85Y"
+```
