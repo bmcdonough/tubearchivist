@@ -33,7 +33,8 @@ class YoutubeSubtitle:
         if languages_raw:
             self.languages = [i.strip() for i in languages_raw.split(",")]
             print(
-                f"{self.video.youtube_id}: subtitle languages requested: {self.languages}"
+                f"{self.video.youtube_id}: subtitle languages requested: "
+                f"{self.languages}"
             )
 
     def get_subtitles(self):
@@ -78,7 +79,8 @@ class YoutubeSubtitle:
             return {}
 
         print(
-            f"{self.video.youtube_id}: found {len(all_subtitles)} language options for {source} subtitles"
+            f"{self.video.youtube_id}: found {len(all_subtitles)} "
+            f"language options for {source} subtitles"
         )
         candidate_subtitles = {}
         for lang, all_formats in all_subtitles.items():
@@ -96,7 +98,8 @@ class YoutubeSubtitle:
                 continue
 
             print(
-                f"{self.video.youtube_id}-{lang}: found {len(all_formats)} format options"
+                f"{self.video.youtube_id}-{lang}: found "
+                f"{len(all_formats)} format options"
             )
             subtitle_json3 = [i for i in all_formats if i["ext"] == "json3"]
             if not subtitle_json3:
@@ -106,14 +109,17 @@ class YoutubeSubtitle:
                 continue
 
             print(
-                f"{self.video.youtube_id}-{lang}: json3 format found, adding as candidate"
+                f"{self.video.youtube_id}-{lang}: "
+                f"json3 format found, adding as candidate"
             )
             subtitle = subtitle_json3[0]
             subtitle.update({"lang": lang, "source": source, "media_url": media_url})
             candidate_subtitles[lang] = subtitle
 
         print(
-            f"{self.video.youtube_id}: found {len(candidate_subtitles)} candidate {source} subtitles"
+            f"{self.video.youtube_id}: found "
+            f"{len(candidate_subtitles)} candidate "
+            f"{source} subtitles"
         )
         return candidate_subtitles
 
@@ -321,7 +327,8 @@ class SubtitleParser:
         print(f"{video.youtube_id}-{self.lang}: creating bulk import for Elasticsearch")
         documents = self._create_documents(video, source)
         print(
-            f"{video.youtube_id}-{self.lang}: created {len(documents)} documents for indexing"
+            f"{video.youtube_id}-{self.lang}: "
+            f"created {len(documents)} documents for indexing"
         )
         bulk_list = []
 
