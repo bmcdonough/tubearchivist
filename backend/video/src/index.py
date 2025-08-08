@@ -236,21 +236,21 @@ class YoutubeVideo(YouTubeItem, YoutubeSubtitle):
         """find video path in dl cache"""
         config = AppConfig().config
         output_format = "mkv" if config["downloads"]["mkv_format"] else "mp4"
-        
+
         cache_dir = EnvironmentSettings.CACHE_DIR
         video_id = self.json_data["youtube_id"]
-        
+
         # Try with configured format first
         cache_path = f"{cache_dir}/download/{video_id}.{output_format}"
         if os.path.exists(cache_path):
             return cache_path
-            
+
         # Fallback to mp4 if configured format is mkv but file is mp4
         if output_format == "mkv":
             mp4_cache_path = f"{cache_dir}/download/{video_id}.mp4"
             if os.path.exists(mp4_cache_path):
                 return mp4_cache_path
-        
+
         # Check in media directory with configured format
         channel_path = os.path.join(
             EnvironmentSettings.MEDIA_DIR,
@@ -259,7 +259,7 @@ class YoutubeVideo(YouTubeItem, YoutubeSubtitle):
         )
         if os.path.exists(channel_path):
             return channel_path
-            
+
         # Fallback to mp4 in media directory if configured format is mkv but file is mp4
         if output_format == "mkv":
             mp4_channel_path = os.path.join(
