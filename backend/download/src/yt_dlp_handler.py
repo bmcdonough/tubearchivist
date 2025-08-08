@@ -253,7 +253,7 @@ class VideoDownloader(DownloaderBase):
             # webp files don't get cleaned up automatically
             all_cached = ignore_filelist(os.listdir(dl_cache))
             output_format = "mkv" if self.config["downloads"]["mkv_format"] else "mp4"
-            to_clean = [i for i in all_cached if not i.endswith(f"." + output_format)]
+            to_clean = [i for i in all_cached if not i.endswith("." + output_format)]
             for file_name in to_clean:
                 file_path = os.path.join(dl_cache, file_name)
                 os.remove(file_path)
