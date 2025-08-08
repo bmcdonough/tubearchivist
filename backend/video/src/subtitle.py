@@ -154,29 +154,53 @@ class YoutubeSubtitle:
         """send subtitle to es for indexing"""
         _, _ = ElasticWrap("_bulk").post(data=query_str, ndjson=True)
 
+    def merge_subtitle_to_video(self):
+        """merge subtitle file into video file"""
+        # This function will be implemented based on further instructions
+        pass
+
     def delete(self, subtitles=False):
         """delete subtitles from index and filesystem"""
         youtube_id = self.video.youtube_id
-        videos_base = EnvironmentSettings.MEDIA_DIR
+
+        if not subtitles:
+            return False
+
+        indexed = []
+        paths = []
+
+        # delete from ES
+        for subtitle in subtitles:
+            media_url = subtitle.get("media_url")
+            lang = subtitle.get("lang")
+            paths.append(media_url)
+            indexed.append(f"{youtube_id}-{lang}-")
+
+        if indexed:
+            # delete from index
+            query = {
+                "query": {
+                    "bool": {"should": []}
+                }
+            }
+            for idx in indexed:
+                match = {"prefix": {"subtitle_fragment_id": idx}}
+                query["query"]["bool"]["should"].append(match)
+
+            response, status_code = ElasticWrap("ta_subtitle/_delete_by_query").post(
+                query
+            )
+            if not status_code == 200:
+                print(response)
+
         # delete files
-        if subtitles:
-            files = [i["media_url"] for i in subtitles]
-        else:
-            if not self.video.json_data.get("subtitles"):
-                return
-
-            files = [i["media_url"] for i in self.video.json_data["subtitles"]]
-
-        for file_name in files:
+        videos_base = EnvironmentSettings.MEDIA_DIR
+        for file_name in paths:
             file_path = os.path.join(videos_base, file_name)
             try:
                 os.remove(file_path)
             except FileNotFoundError:
                 print(f"{youtube_id}: {file_path} failed to delete")
-        # delete from index
-        path = "ta_subtitle/_delete_by_query?refresh=true"
-        data = {"query": {"term": {"youtube_id": {"value": youtube_id}}}}
-        _, _ = ElasticWrap(path).post(data=data)
 
 
 class SubtitleParser:

@@ -20,6 +20,7 @@ export type AppSettingsConfigType = {
     subtitle: string | null;
     subtitle_source: string | null;
     subtitle_index: boolean;
+    merge_subtitle: boolean;
     comment_max: string | null;
     comment_sort: string;
     cookie_import: boolean;

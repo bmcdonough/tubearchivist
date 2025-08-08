@@ -62,6 +62,7 @@ const SettingsApplication = () => {
   const [subtitleLang, setSubtitleLang] = useState<string | null>(null);
   const [subtitleSource, setSubtitleSource] = useState<string | null>(null);
   const [indexSubtitles, setIndexSubtitles] = useState(false);
+  const [mergeSubtitle, setMergeSubtitle] = useState(false);
 
   // Comments
   const [commentsMax, setCommentsMax] = useState<string | null>(null);
@@ -120,6 +121,7 @@ const SettingsApplication = () => {
     setSubtitleLang(appSettingsConfigData?.downloads.subtitle || null);
     setSubtitleSource(appSettingsConfigData?.downloads.subtitle_source || null);
     setIndexSubtitles(appSettingsConfigData?.downloads.subtitle_index || false);
+    setMergeSubtitle(appSettingsConfigData?.downloads.merge_subtitle || false);
 
     // Comments
     setCommentsMax(appSettingsConfigData?.downloads.comment_max || null);
@@ -601,6 +603,16 @@ const SettingsApplication = () => {
                     <ToggleConfig
                       name="downloads.subtitle_index"
                       value={indexSubtitles}
+                      updateCallback={handleUpdateConfig}
+                    />
+                  </div>
+                  <div className="settings-box-wrapper">
+                    <div>
+                      <p>Merge subtitle to video</p>
+                    </div>
+                    <ToggleConfig
+                      name="downloads.merge_subtitle"
+                      value={mergeSubtitle}
                       updateCallback={handleUpdateConfig}
                     />
                   </div>

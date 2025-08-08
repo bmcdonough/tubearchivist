@@ -39,6 +39,7 @@ class DownloadsConfigType(TypedDict):
     subtitle: str | None
     subtitle_source: Literal["user", "auto"] | None
     subtitle_index: bool
+    merge_subtitle: bool
     comment_max: str | None
     comment_sort: Literal["top", "new"] | None
     cookie_import: bool
@@ -89,6 +90,7 @@ class AppConfig:
             "subtitle": None,
             "subtitle_source": None,
             "subtitle_index": False,
+            "merge_subtitle": False,
             "comment_max": None,
             "comment_sort": "top",
             "cookie_import": False,
