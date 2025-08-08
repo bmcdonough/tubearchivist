@@ -65,7 +65,7 @@ class YtWrap:
 
     def download(self, url):
         """make download request"""
-        self.obs.update({"check_formats": "selected"})
+        # Removed the strict check_formats parameter to allow format fallbacks
         with yt_dlp.YoutubeDL(self.obs) as ydl:
             try:
                 ydl.download([url])
@@ -73,6 +73,19 @@ class YtWrap:
                 print(f"{url}: failed to download with message {err}")
                 if "Temporary failure in name resolution" in str(err):
                     raise ConnectionError("lost the internet, abort!") from err
+                    
+                # If format error occurs, try again with a more general format string
+                if "Requested format is not available" in str(err):
+                    print(f"{url}: Attempting with fallback format")
+                    fallback_obs = self.obs.copy()
+                    fallback_obs["format"] = "bestvideo+bestaudio/best"
+                    with yt_dlp.YoutubeDL(fallback_obs) as fallback_ydl:
+                        try:
+                            fallback_ydl.download([url])
+                            self._validate_cookie()
+                            return True, True
+                        except yt_dlp.utils.DownloadError as fallback_err:
+                            print(f"{url}: fallback format also failed: {fallback_err}")
 
                 return False, str(err)
 
