@@ -32,7 +32,9 @@ class YoutubeSubtitle:
         print(f"{self.video.youtube_id}: parsing subtitle config: {languages_raw}")
         if languages_raw:
             self.languages = [i.strip() for i in languages_raw.split(",")]
-            print(f"{self.video.youtube_id}: subtitle languages requested: {self.languages}")
+            print(
+                f"{self.video.youtube_id}: subtitle languages requested: {self.languages}"
+            )
 
     def get_subtitles(self):
         """check what to do"""
@@ -75,7 +77,9 @@ class YoutubeSubtitle:
             print(f"{self.video.youtube_id}: no {source} subtitles found in metadata")
             return {}
 
-        print(f"{self.video.youtube_id}: found {len(all_subtitles)} language options for {source} subtitles")
+        print(
+            f"{self.video.youtube_id}: found {len(all_subtitles)} language options for {source} subtitles"
+        )
         candidate_subtitles = {}
         for lang, all_formats in all_subtitles.items():
             if lang == "live_chat":
@@ -90,29 +94,33 @@ class YoutubeSubtitle:
                 print(f"{self.video.youtube_id}-{lang}: no subtitle formats found")
                 # no subtitles found
                 continue
-            
-            print(f"{self.video.youtube_id}-{lang}: found {len(all_formats)} format options")
+
+            print(
+                f"{self.video.youtube_id}-{lang}: found {len(all_formats)} format options"
+            )
             subtitle_json3 = [i for i in all_formats if i["ext"] == "json3"]
             if not subtitle_json3:
-                print(f"{self.video.youtube_id}-{lang}: json3 format not found, skipping")
+                print(
+                    f"{self.video.youtube_id}-{lang}: json3 format not found, skipping"
+                )
                 continue
 
-            print(f"{self.video.youtube_id}-{lang}: json3 format found, adding as candidate")
-            subtitle = subtitle_json3[0]
-            subtitle.update(
-                {"lang": lang, "source": source, "media_url": media_url}
+            print(
+                f"{self.video.youtube_id}-{lang}: json3 format found, adding as candidate"
             )
+            subtitle = subtitle_json3[0]
+            subtitle.update({"lang": lang, "source": source, "media_url": media_url})
             candidate_subtitles[lang] = subtitle
 
-        print(f"{self.video.youtube_id}: found {len(candidate_subtitles)} candidate {source} subtitles")
+        print(
+            f"{self.video.youtube_id}: found {len(candidate_subtitles)} candidate {source} subtitles"
+        )
         return candidate_subtitles
 
     def download_subtitles(self, relevant_subtitles):
         """download subtitle files to archive"""
         subtitle_list = ", ".join(map(itemgetter("lang"), relevant_subtitles))
-        print(
-            f"{self.video.youtube_id}: downloading subtitles: {subtitle_list}"
-        )
+        print(f"{self.video.youtube_id}: downloading subtitles: {subtitle_list}")
         videos_base = EnvironmentSettings.MEDIA_DIR
         indexed = []
         for subtitle in relevant_subtitles:
@@ -183,7 +191,9 @@ class YoutubeSubtitle:
         # delete files
         if subtitles:
             files = [i["media_url"] for i in subtitles]
-            print(f"{youtube_id}: deleting specified subtitle files: {len(files)} files")
+            print(
+                f"{youtube_id}: deleting specified subtitle files: {len(files)} files"
+            )
         else:
             if not self.video.json_data.get("subtitles"):
                 print(f"{youtube_id}: no subtitles to delete")
@@ -244,7 +254,7 @@ class SubtitleParser:
                 "idx": idx + 1,
             }
             self.all_cues.append(cue)
-        
+
         print(f"{self.lang}: processed {len(self.all_cues)} cues")
 
     @staticmethod
@@ -300,15 +310,19 @@ class SubtitleParser:
             stamp = f"{cue.get('start')} --> {cue.get('end')}"
             cue_text = f"\n\n{cue.get('idx')}\n{stamp}\n{cue.get('text')}"
             subtitle_str = subtitle_str + cue_text
-        
-        print(f"{self.lang}: VTT subtitle string created with {len(self.all_cues)} cues")
+
+        print(
+            f"{self.lang}: VTT subtitle string created with {len(self.all_cues)} cues"
+        )
         return subtitle_str
 
     def create_bulk_import(self, video, source):
         """subtitle lines for es import"""
         print(f"{video.youtube_id}-{self.lang}: creating bulk import for Elasticsearch")
         documents = self._create_documents(video, source)
-        print(f"{video.youtube_id}-{self.lang}: created {len(documents)} documents for indexing")
+        print(
+            f"{video.youtube_id}-{self.lang}: created {len(documents)} documents for indexing"
+        )
         bulk_list = []
 
         for document in documents:
@@ -327,8 +341,10 @@ class SubtitleParser:
         """process documents"""
         print(f"{video.youtube_id}-{self.lang}: creating subtitle documents")
         documents = self._chunk_list(video.youtube_id)
-        print(f"{video.youtube_id}-{self.lang}: chunked into {len(documents)} documents")
-        
+        print(
+            f"{video.youtube_id}-{self.lang}: chunked into {len(documents)} documents"
+        )
+
         channel = video.json_data.get("channel")
         meta_dict = {
             "youtube_id": video.youtube_id,
@@ -369,6 +385,6 @@ class SubtitleParser:
                 chunk["subtitle_end"] = cue.get("end")
                 chunk_list.append(chunk)
                 chunk = {}
-        
+
         print(f"{youtube_id}-{self.lang}: created {len(chunk_list)} subtitle chunks")
         return chunk_list
