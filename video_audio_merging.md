@@ -313,3 +313,11 @@ yt-dlp -f bestvideo+bestaudio[acodec*=mp4a] \
   -o "%(title)s.%(ext)s" \
   "https://youtube.com/watch?v=1VRgZEwf85Y"
 ```
+
+# Adding a new configuration element
+- frontend/src/pages/SettingsApplication.tsx
+- frontend/src/stores/AppSettingsStore.ts
+- frontend/src/api/loader/loadAppsettingsConfig.ts
+
+- backend/appsettings/src/config.py
+- backend/appsettings/serializers.py
