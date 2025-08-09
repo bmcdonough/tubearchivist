@@ -173,8 +173,9 @@ class VideoDownloader(DownloaderBase):
         }
 
         # Configure subtitle settings
+        merge_subtitle = self.config["downloads"]["merge_subtitle"]
         subtitle_language = self.config["downloads"]["subtitle"]
-        if subtitle_language:
+        if merge_subtitle and subtitle_language:
             # If subtitle language, enable writing and embedding subtitles
             self.obs["writesubtitles"] = True
             self.obs["embedsubtitles"] = True
