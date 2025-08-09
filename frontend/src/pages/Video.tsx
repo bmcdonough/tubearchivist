@@ -143,7 +143,9 @@ const Video = () => {
   useEffect(() => {
     (async () => {
       if (refreshVideoList || videoId !== videoResponseData?.youtube_id) {
+        console.log('[DEBUG] Loading video data for:', videoId);
         const videoByIdResponse = await loadVideoById(videoId);
+        console.log('[DEBUG] Video API response:', videoByIdResponse);
         setVideoResponse(videoByIdResponse);
 
         const similarVideosResponse = await loadSimilarVideosById(videoId);
@@ -463,20 +465,36 @@ const Video = () => {
           <div className="info-box-item">
             {video.media_size && <p>File size: {humanFileSize(video.media_size, useSiUnits)}</p>}
 
-            {video.streams &&
-              video.streams.map(stream => {
-                return (
-                  <p key={stream.index}>
-                    {capitalizeFirstLetter(stream.type)}: {stream.codec}{' '}
-                    {humanFileSize(stream.bitrate, useSiUnits)}/s
-                    {stream.width && (
-                      <>
-                        <span className="space-carrot">|</span> {stream.width}x{stream.height}
-                      </>
-                    )}{' '}
-                  </p>
-                );
-              })}
+            {/* Debug information for streams */}
+            {(() => {
+              console.log('[DEBUG] Current video streams:', video.streams);
+              return null;
+            })()}
+
+            {video.streams && video.streams.length > 0 ? (
+              <>
+                {video.streams.map(stream => {
+                  console.log('[DEBUG] Processing stream:', stream);
+                  return (
+                    <p key={stream.index}>
+                      {capitalizeFirstLetter(stream.type)}: {stream.codec}{' '}
+                      {humanFileSize(stream.bitrate, useSiUnits)}/s
+                      {stream.width && (
+                        <>
+                          <span className="space-carrot">|</span> {stream.width}x{stream.height}
+                        </>
+                      )}{' '}
+                    </p>
+                  );
+                })}
+              </>
+            ) : (
+              <div className="debug-info">
+                <p style={{ color: 'orange' }}>
+                  <strong>Debug:</strong> No streams data available
+                </p>
+              </div>
+            )}
           </div>
         </div>
         {video.tags && video.tags.length > 0 && (
