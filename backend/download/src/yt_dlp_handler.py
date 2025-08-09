@@ -52,6 +52,9 @@ class VideoDownloader(DownloaderBase):
     def __init__(self, task=False):
         super().__init__(task)
         self.obs = False
+        self.output_format = (
+            "mkv" if self.config["downloads"]["mkv_format"] else "mp4"
+        )
         self._build_obs()
 
     def run_queue(self, auto_only=False) -> tuple[int, int]:
@@ -155,15 +158,12 @@ class VideoDownloader(DownloaderBase):
 
     def _build_obs_basic(self):
         """initial obs"""
-        # Determine output format based on mkv_format setting
-        output_format = (
-            "mkv" if self.config["downloads"]["mkv_format"] else "mp4"
-        )
-
-        # Basic configuration
+        # Basic configuration using the class output_format property
         self.obs = {
-            "merge_output_format": output_format,
-            "outtmpl": (self.CACHE_DIR + f"/download/%(id)s.{output_format}"),
+            "merge_output_format": self.output_format,
+            "outtmpl": (
+                self.CACHE_DIR + f"/download/%(id)s.{self.output_format}"
+            ),
             "progress_hooks": [self._progress_hook],
             "noprogress": True,
             "continuedl": True,
@@ -257,11 +257,10 @@ class VideoDownloader(DownloaderBase):
         if self.obs["writethumbnail"]:
             # webp files don't get cleaned up automatically
             all_cached = ignore_filelist(os.listdir(dl_cache))
-            output_format = (
-                "mkv" if self.config["downloads"]["mkv_format"] else "mp4"
-            )
             to_clean = [
-                i for i in all_cached if not i.endswith("." + output_format)
+                i
+                for i in all_cached
+                if not i.endswith("." + self.output_format)
             ]
             for file_name in to_clean:
                 file_path = os.path.join(dl_cache, file_name)
@@ -287,11 +286,8 @@ class VideoDownloader(DownloaderBase):
             os.makedirs(folder)
             if host_uid and host_gid:
                 os.chown(folder, host_uid, host_gid)
-        # move media file
-        output_format = (
-            "mkv" if self.config["downloads"]["mkv_format"] else "mp4"
-        )
-        media_file = vid_dict["youtube_id"] + f".{output_format}"
+        # move media file using the class output_format property
+        media_file = vid_dict["youtube_id"] + f".{self.output_format}"
         old_path = os.path.join(self.CACHE_DIR, "download", media_file)
         new_path = os.path.join(self.MEDIA_DIR, vid_dict["media_url"])
         # move media file and fix permission
