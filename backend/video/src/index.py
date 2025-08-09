@@ -232,10 +232,14 @@ class YoutubeVideo(YouTubeItem, YoutubeSubtitle):
         }
         self.json_data.update({"stats": stats})
 
+    def get_output_format(self):
+        """Determine the output format based on configuration"""
+        config = AppConfig().config
+        return "mkv" if config["downloads"]["mkv_format"] else "mp4"
+
     def build_dl_cache_path(self):
         """find video path in dl cache"""
-        config = AppConfig().config
-        output_format = "mkv" if config["downloads"]["mkv_format"] else "mp4"
+        output_format = self.get_output_format()
 
         cache_dir = EnvironmentSettings.CACHE_DIR
         video_id = self.json_data["youtube_id"]
@@ -311,9 +315,10 @@ class YoutubeVideo(YouTubeItem, YoutubeSubtitle):
 
     def add_file_path(self):
         """build media_url for where file will be located"""
+        output_format = self.get_output_format()
         self.json_data["media_url"] = os.path.join(
             self.json_data["channel"]["channel_id"],
-            self.json_data["youtube_id"] + ".mp4",
+            self.json_data["youtube_id"] + f".{output_format}",
         )
 
     def delete_media_file(self):
