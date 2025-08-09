@@ -88,7 +88,9 @@ class YoutubeSubtitle:
                 continue
 
             subtitle = subtitle_json3[0]
-            subtitle.update({"lang": lang, "source": source, "media_url": media_url})
+            subtitle.update(
+                {"lang": lang, "source": source, "media_url": media_url}
+            )
             candidate_subtitles[lang] = subtitle
 
         return candidate_subtitles
@@ -96,7 +98,9 @@ class YoutubeSubtitle:
     def download_subtitles(self, relevant_subtitles):
         """download subtitle files to archive"""
         subtitle_list = ", ".join(map(itemgetter("lang"), relevant_subtitles))
-        print(f"{self.video.youtube_id}: downloading subtitles: {subtitle_list}")
+        print(
+            f"{self.video.youtube_id}: downloading subtitles: {subtitle_list}"
+        )
         videos_base = EnvironmentSettings.MEDIA_DIR
         indexed = []
         for subtitle in relevant_subtitles:
@@ -181,9 +185,9 @@ class YoutubeSubtitle:
                 match = {"prefix": {"subtitle_fragment_id": idx}}
                 query["query"]["bool"]["should"].append(match)
 
-            response, status_code = ElasticWrap("ta_subtitle/_delete_by_query").post(
-                query
-            )
+            response, status_code = ElasticWrap(
+                "ta_subtitle/_delete_by_query"
+            ).post(query)
             if not status_code == 200:
                 print(response)
 
