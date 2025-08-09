@@ -229,6 +229,10 @@ class MediaStreamExtractor:
         # not available
         # This ensures we don't lose video stream information
         try:
+            # Check if the stream has attached_pic attribute set to 1
+            attached_pic = stream.get("disposition", {}).get("attached_pic", 0)
+            logging.info(f"[DEBUG] Stream has attached_pic: {attached_pic}")
+
             metadata_entry = {
                 "type": "video",
                 "index": stream["index"],
@@ -236,6 +240,7 @@ class MediaStreamExtractor:
                 "width": stream.get("width", 0),
                 "height": stream.get("height", 0),
                 "bitrate": bit_rate,
+                "attached_pic": attached_pic,
             }
             logging.info(f"[DEBUG] Created video metadata: {metadata_entry}")
             self.metadata.append(metadata_entry)

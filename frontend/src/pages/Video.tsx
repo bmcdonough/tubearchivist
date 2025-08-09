@@ -484,6 +484,12 @@ const Video = () => {
                           <span className="space-carrot">|</span> {stream.width}x{stream.height}
                         </>
                       )}{' '}
+                      {stream.attached_pic === 1 && (
+                        <>
+                          <span className="space-carrot">|</span>{' '}
+                          <span style={{ color: '#f7ca18' }}>thumbnail</span>
+                        </>
+                      )}{' '}
                     </p>
                   );
                 })}

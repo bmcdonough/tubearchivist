@@ -44,6 +44,7 @@ export type StreamType = {
   width?: number;
   height?: number;
   bitrate: number;
+  attached_pic?: number;
 };
 
 export type Subtitles = {
