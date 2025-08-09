@@ -131,6 +131,10 @@ class YoutubeVideo(YouTubeItem, YoutubeSubtitle):
         self.channel_id = False
         self.video_type = video_type
         self.offline_import = False
+        config = AppConfig().config
+        self.output_format = (
+            "mkv" if config["downloads"]["mkv_format"] else "mp4"
+        )
 
     def build_json(self, youtube_meta_overwrite=False, media_path=False):
         """build json dict of video"""
@@ -239,18 +243,16 @@ class YoutubeVideo(YouTubeItem, YoutubeSubtitle):
 
     def build_dl_cache_path(self):
         """find video path in dl cache"""
-        output_format = self.get_output_format()
-
         cache_dir = EnvironmentSettings.CACHE_DIR
         video_id = self.json_data["youtube_id"]
 
         # Try with configured format first
-        cache_path = f"{cache_dir}/download/{video_id}.{output_format}"
+        cache_path = f"{cache_dir}/download/{video_id}.{self.output_format}"
         if os.path.exists(cache_path):
             return cache_path
 
         # Fallback to mp4 if configured format is mkv but file is mp4
-        if output_format == "mkv":
+        if self.output_format == "mkv":
             mp4_cache_path = f"{cache_dir}/download/{video_id}.mp4"
             if os.path.exists(mp4_cache_path):
                 print(
@@ -264,14 +266,14 @@ class YoutubeVideo(YouTubeItem, YoutubeSubtitle):
         channel_path = os.path.join(
             EnvironmentSettings.MEDIA_DIR,
             self.json_data["channel"]["channel_id"],
-            f"{video_id}.{output_format}",
+            f"{video_id}.{self.output_format}",
         )
         if os.path.exists(channel_path):
             return channel_path
 
         # Fallback to mp4 in media directory
         # if configured format is mkv but file is mp4
-        if output_format == "mkv":
+        if self.output_format == "mkv":
             mp4_channel_path = os.path.join(
                 EnvironmentSettings.MEDIA_DIR,
                 self.json_data["channel"]["channel_id"],
@@ -315,10 +317,9 @@ class YoutubeVideo(YouTubeItem, YoutubeSubtitle):
 
     def add_file_path(self):
         """build media_url for where file will be located"""
-        output_format = self.get_output_format()
         self.json_data["media_url"] = os.path.join(
             self.json_data["channel"]["channel_id"],
-            self.json_data["youtube_id"] + f".{output_format}",
+            self.json_data["youtube_id"] + f".{self.output_format}",
         )
 
     def delete_media_file(self):
