@@ -234,10 +234,8 @@ class VideoDownloader(DownloaderBase):
                 "already_have_thumbnail": True,
             }
 
-            # For MKV files, explicitly prefer ffmpeg
-            # to avoid failed attempts with mutagen/AtomicParsley
-            if self.output_format == "mkv":
-                embed_thumbnail_pp["prefer_ffmpeg"] = True
+            # MKV files will use ffmpeg by default
+            # No need to specify prefer_ffmpeg as it's no longer supported
 
             postprocessors.append(embed_thumbnail_pp)
             self.obs["writethumbnail"] = True
