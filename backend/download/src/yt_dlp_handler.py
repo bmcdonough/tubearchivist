@@ -156,7 +156,9 @@ class VideoDownloader(DownloaderBase):
     def _build_obs_basic(self):
         """initial obs"""
         # Determine output format based on mkv_format setting
-        output_format = "mkv" if self.config["downloads"]["mkv_format"] else "mp4"
+        output_format = (
+            "mkv" if self.config["downloads"]["mkv_format"] else "mp4"
+        )
 
         # Basic configuration
         self.obs = {
@@ -173,7 +175,7 @@ class VideoDownloader(DownloaderBase):
         # Configure subtitle settings
         subtitle_language = self.config["downloads"]["subtitle"]
         if subtitle_language:
-            # If subtitle language is set, enable writing and embedding subtitles
+            # If subtitle language, enable writing and embedding subtitles
             self.obs["writesubtitles"] = True
             self.obs["embedsubtitles"] = True
             self.obs["subtitleslangs"] = [
@@ -193,7 +195,9 @@ class VideoDownloader(DownloaderBase):
             format_sort_list = [i.strip() for i in format_sort.split(",")]
             self.obs["format_sort"] = format_sort_list
         if self.config["downloads"]["limit_speed"]:
-            self.obs["ratelimit"] = self.config["downloads"]["limit_speed"] * 1024
+            self.obs["ratelimit"] = (
+                self.config["downloads"]["limit_speed"] * 1024
+            )
 
         throttle = self.config["downloads"]["throttledratelimit"]
         if throttle:
@@ -253,8 +257,12 @@ class VideoDownloader(DownloaderBase):
         if self.obs["writethumbnail"]:
             # webp files don't get cleaned up automatically
             all_cached = ignore_filelist(os.listdir(dl_cache))
-            output_format = "mkv" if self.config["downloads"]["mkv_format"] else "mp4"
-            to_clean = [i for i in all_cached if not i.endswith("." + output_format)]
+            output_format = (
+                "mkv" if self.config["downloads"]["mkv_format"] else "mp4"
+            )
+            to_clean = [
+                i for i in all_cached if not i.endswith("." + output_format)
+            ]
             for file_name in to_clean:
                 file_path = os.path.join(dl_cache, file_name)
                 os.remove(file_path)
@@ -272,13 +280,17 @@ class VideoDownloader(DownloaderBase):
         host_uid = EnvironmentSettings.HOST_UID
         host_gid = EnvironmentSettings.HOST_GID
         # make folder
-        folder = os.path.join(self.MEDIA_DIR, vid_dict["channel"]["channel_id"])
+        folder = os.path.join(
+            self.MEDIA_DIR, vid_dict["channel"]["channel_id"]
+        )
         if not os.path.exists(folder):
             os.makedirs(folder)
             if host_uid and host_gid:
                 os.chown(folder, host_uid, host_gid)
         # move media file
-        output_format = "mkv" if self.config["downloads"]["mkv_format"] else "mp4"
+        output_format = (
+            "mkv" if self.config["downloads"]["mkv_format"] else "mp4"
+        )
         media_file = vid_dict["youtube_id"] + f".{output_format}"
         old_path = os.path.join(self.CACHE_DIR, "download", media_file)
         new_path = os.path.join(self.MEDIA_DIR, vid_dict["media_url"])
