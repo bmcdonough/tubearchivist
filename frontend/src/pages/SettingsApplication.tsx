@@ -470,9 +470,9 @@ const SettingsApplication = () => {
                       file.
                     </li>
                     <li>
-                      MKV File Format changes the container format from MP4 to MKV. MKV supports more
-                      audio and video codecs, and has better subtitle support. Enable this if you need
-                      these advanced features or want to preserve more metadata.
+                      MKV File Format changes the container format from MP4 to MKV. MKV supports
+                      more audio and video codecs, and has better subtitle support. Enable this if
+                      you need these advanced features or want to preserve more metadata.
                     </li>
                   </ul>
                 </div>

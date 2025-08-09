@@ -73,8 +73,8 @@ class YtWrap:
                 print(f"{url}: failed to download with message {err}")
                 if "Temporary failure in name resolution" in str(err):
                     raise ConnectionError("lost the internet, abort!") from err
-                    
-                # If format error occurs, try again with a more general format string
+
+                # If format error occurs, try again with fallback format
                 if "Requested format is not available" in str(err):
                     print(f"{url}: Attempting with fallback format")
                     fallback_obs = self.obs.copy()
@@ -85,7 +85,10 @@ class YtWrap:
                             self._validate_cookie()
                             return True, True
                         except yt_dlp.utils.DownloadError as fallback_err:
-                            print(f"{url}: fallback format also failed: {fallback_err}")
+                            print(
+                                f"{url}: fallback format also failed: "
+                                f"{fallback_err}"
+                            )
 
                 return False, str(err)
 
