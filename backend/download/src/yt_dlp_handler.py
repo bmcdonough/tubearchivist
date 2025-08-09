@@ -229,12 +229,17 @@ class VideoDownloader(DownloaderBase):
             )
 
         if self.config["downloads"]["add_thumbnail"]:
-            postprocessors.append(
-                {
-                    "key": "EmbedThumbnail",
-                    "already_have_thumbnail": True,
-                }
-            )
+            embed_thumbnail_pp = {
+                "key": "EmbedThumbnail",
+                "already_have_thumbnail": True,
+            }
+
+            # For MKV files, explicitly prefer ffmpeg
+            # to avoid failed attempts with mutagen/AtomicParsley
+            if self.output_format == "mkv":
+                embed_thumbnail_pp["prefer_ffmpeg"] = True
+
+            postprocessors.append(embed_thumbnail_pp)
             self.obs["writethumbnail"] = True
 
         self.obs["postprocessors"] = postprocessors
