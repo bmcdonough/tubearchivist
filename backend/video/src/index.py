@@ -4,6 +4,8 @@ functionality:
 - index and update in es
 """
 
+import inspect
+import logging
 import os
 from datetime import datetime
 
@@ -21,6 +23,41 @@ from video.src.comments import Comments
 from video.src.constants import VideoTypeEnum
 from video.src.media_streams import MediaStreamExtractor
 from video.src.subtitle import YoutubeSubtitle
+
+logging = logging.getLogger(__name__)
+
+
+# Debug helper function
+def debug_helper(func):
+    """Decorator to add debug logging for stream extraction functions"""
+
+    def wrapper(*args, **kwargs):
+        # Get caller information
+        stack = inspect.stack()
+        caller_frame = stack[
+            2
+        ]  # Frame 0 is wrapper, Frame 1 is decorated func, Frame 2 is caller
+        filename = os.path.basename(caller_frame.filename)
+        line_number = caller_frame.lineno
+
+        logging.debug(
+            f"Calling {func.__name__} from [{filename}:{line_number}]"
+        )
+        try:
+            result = func(*args, **kwargs)
+            logging.debug(
+                f"[{filename}:{line_number}] {func.__name__} succeeded with "
+                f"result type: {type(result)}"
+            )
+            return result
+        except Exception as e:
+            logging.error(
+                f"[{filename}:{line_number}] {func.__name__} failed with "
+                f"error: {str(e)}"
+            )
+            raise
+
+    return wrapper
 
 
 class SponsorBlock:
@@ -289,10 +326,12 @@ class YoutubeVideo(YouTubeItem, YoutubeSubtitle):
             }
         )
 
+    @debug_helper
     def add_streams(self, media_path=False):
         """add stream metadata"""
         vid_path = media_path or self.build_dl_cache_path()
         media = MediaStreamExtractor(vid_path)
+        logging.info(f"add_streams : {vid_path}")
         self.json_data.update(
             {
                 "streams": media.extract_metadata(),
