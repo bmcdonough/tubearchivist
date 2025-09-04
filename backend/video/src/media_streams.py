@@ -93,10 +93,13 @@ class MediaStreamExtractor:
 
     def process_stream(self, stream):
         """parse stream to metadata"""
-        codec_type = stream.get("codec_type")
+        codec_name = stream.get("codec_name")
         codec_tag_string = stream.get("codec_tag_string")
+        codec_type = stream.get("codec_type")
         if codec_type == "video":
             self._extract_video_metadata(stream)
+            if codec_name == "png":
+                self._extract_thumbnail_metadata(stream)
         elif codec_type == "audio":
             self._extract_audio_metadata(stream)
         elif codec_type == "data":
@@ -148,6 +151,24 @@ class MediaStreamExtractor:
                 "type": "subtitle",
                 "index": stream["index"],
                 "codec": stream.get("codec_name", "text"),
+                "bitrate": int(stream.get("bit_rate", 0)),
+                "language": stream.get("tags", {}).get("language", "unknown"),
+            }
+        )
+
+    @debug_helper
+    def _extract_thumbnail_metadata(self, stream):
+        """extract thumbnail metadata"""
+        logging.debug(
+            f"thumbnail metadata: {stream['index']} {stream.get('codec_name')}"
+            f"{int(stream.get('bit_rate', 0))} "
+            f"{stream.get('tags', {}).get('language', 'unknown')}"
+        )
+        self.metadata.append(
+            {
+                "type": "thumbnail",
+                "index": stream["index"],
+                "codec": stream.get("codec_name", "image"),
                 "bitrate": int(stream.get("bit_rate", 0)),
                 "language": stream.get("tags", {}).get("language", "unknown"),
             }
