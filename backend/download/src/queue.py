@@ -6,10 +6,12 @@ Functionality:
 
 import json
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from appsettings.src.config import AppConfig
 from channel.src.index import YoutubeChannel
 from channel.src.remote_query import get_last_channel_videos
+from common.src.env_settings import EnvironmentSettings
 from common.src.es_connect import ElasticWrap, IndexPaginate
 from common.src.helper import (
     get_channels,
@@ -153,7 +155,7 @@ class PendingList(PendingIndex):
         if entry["type"] == "video":
             to_add = self._add_video(entry["url"], entry["vid_type"])
             if to_add:
-                self.__notify_add(
+                self._notify_add(
                     item_type="video",
                     name=to_add["title"],
                     idx=idx,
@@ -218,7 +220,7 @@ class PendingList(PendingIndex):
 
         total = len(video_results)
         for idx, video_data in enumerate(video_results, start=1):
-            to_add = self.__parse_channel_video(
+            to_add = self._parse_channel_video(
                 video_data, vid_type, channel_handler.json_data
             )
             if self.task and self.task.is_stopped():
@@ -228,14 +230,14 @@ class PendingList(PendingIndex):
                 continue
 
             self.missing_videos.append(to_add)
-            self.__notify_add(
+            self._notify_add(
                 item_type="channel",
                 name=channel_handler.json_data["channel_name"],
                 idx=idx,
                 total=total,
             )
 
-    def __parse_channel_video(
+    def _parse_channel_video(
         self, video_data, vid_type, channel_json
     ) -> dict | None:
         """parse video of channel"""
@@ -300,7 +302,7 @@ class PendingList(PendingIndex):
                 continue
 
             self.missing_videos.append(to_add)
-            self.__notify_add(
+            self._notify_add(
                 item_type="playlist",
                 name=playlist.json_data["playlist_name"],
                 idx=idx,
@@ -368,11 +370,11 @@ class PendingList(PendingIndex):
         to_add = {
             "youtube_id": video_data["id"],
             "title": video_data["title"],
-            "vid_thumb_url": self.__extract_thumb(video_data),
+            "vid_thumb_url": self._extract_thumb(video_data),
             "duration": get_duration_str(video_data.get("duration", 0)),
-            "published": self.__extract_published(video_data),
+            "published": self._extract_published(video_data),
             "timestamp": int(datetime.now().timestamp()),
-            "vid_type": self.__extract_vid_type(video_data),
+            "vid_type": self._extract_vid_type(video_data),
             "channel_name": video_data["channel"],
             "channel_id": video_data["channel_id"],
             "channel_indexed": video_data["channel_id"] in self.all_channels,
@@ -380,7 +382,7 @@ class PendingList(PendingIndex):
 
         return to_add
 
-    def __extract_thumb(self, video_data) -> str | None:
+    def _extract_thumb(self, video_data) -> str | None:
         """extract thumb"""
         if "thumbnail" in video_data:
             return video_data["thumbnail"]
@@ -390,22 +392,23 @@ class PendingList(PendingIndex):
 
         return None
 
-    def __extract_published(self, video_data) -> str | int | None:
+    @staticmethod
+    def _extract_published(video_data) -> str | int | None:
         """build published date or timestamp"""
         timestamp = video_data.get("timestamp")
         if timestamp:
             return timestamp
 
         upload_date = video_data.get("upload_date")
-        if not upload_date:
-            return None
+        if upload_date:
+            upload_date_time = datetime.strptime(upload_date, "%Y%m%d")
+            return upload_date_time.replace(
+                tzinfo=ZoneInfo(EnvironmentSettings.TZ)
+            ).timestamp()
 
-        upload_date_time = datetime.strptime(upload_date, "%Y%m%d")
-        published = upload_date_time.strftime("%Y-%m-%d")
+        return None
 
-        return published
-
-    def __extract_vid_type(self, video_data) -> str:
+    def _extract_vid_type(self, video_data) -> str:
         """build vid type"""
         if (
             "vid_type" in video_data
@@ -456,15 +459,27 @@ class PendingList(PendingIndex):
         # add last newline
         bulk_list.append("\n")
         query_str = "\n".join(bulk_list)
-        _, status_code = ElasticWrap("_bulk").post(query_str, ndjson=True)
-        if status_code != 200:
+        response, status_code = ElasticWrap("_bulk").post(
+            query_str, ndjson=True
+        )
+        if status_code not in [200, 201]:
+            print(response)
             self._notify_fail(status_code)
+        elif response.get("errors", False):
+            failed_video_ids = []
+            for item in response.get("items", []):
+                action, result = next(iter(item.items()))
+                if "error" in result:
+                    failed_video_ids.append(result.get("_id"))
+
+            failed_video_ids_str = ",".join(failed_video_ids)
+            self._notify_fail(status_code, failed_video_ids_str)
         else:
             self._notify_done(total)
 
         return len(self.missing_videos)
 
-    def __notify_add(
+    def _notify_add(
         self, item_type: str, name: str, idx: int, total: int
     ) -> None:
         """notify"""
@@ -523,15 +538,20 @@ class PendingList(PendingIndex):
             ]
         )
 
-    def _notify_fail(self, status_code):
+    def _notify_fail(self, status_code, failed_video_ids=None):
         """failed to add"""
         if not self.task:
             return
 
+        message_lines = [
+            "Adding extracted videos failed.",
+            f"Status code: {status_code}",
+        ]
+
+        if failed_video_ids:
+            message_lines.append(f"Failed Videos: {failed_video_ids}")
+
         self.task.send_progress(
-            message_lines=[
-                "Adding extracted videos failed.",
-                f"Status code: {status_code}",
-            ],
+            message_lines=message_lines,
             level="error",
         )

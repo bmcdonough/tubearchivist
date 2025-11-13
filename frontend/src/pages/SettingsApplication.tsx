@@ -57,6 +57,7 @@ const SettingsApplication = () => {
   const [downloadsFormatSort, setDownloadsFormatSort] = useState<string | null>(null);
   const [downloadsExtractorLang, setDownloadsExtractorLang] = useState<string | null>(null);
   const [embedMetadata, setEmbedMetadata] = useState(false);
+  const [embedSubtitles, setEmbedSubtitles] = useState(false);
   const [embedThumbnail, setEmbedThumbnail] = useState(false);
 
   // Subtitles
@@ -115,6 +116,7 @@ const SettingsApplication = () => {
     setDownloadsFormatSort(appSettingsConfigData?.downloads.format_sort || null);
     setDownloadsExtractorLang(appSettingsConfigData?.downloads.extractor_lang || null);
     setEmbedMetadata(appSettingsConfigData?.downloads.add_metadata || false);
+    setEmbedSubtitles(appSettingsConfigData?.downloads.add_subtitles || false);
     setEmbedThumbnail(appSettingsConfigData?.downloads.add_thumbnail || false);
 
     // Subtitles
@@ -396,19 +398,31 @@ const SettingsApplication = () => {
                           <span className="settings-current">
                             {'bestvideo[height<=720]+bestaudio/best[height<=720]'}
                           </span>
-                          : best audio and max video height of 720p.
+                          : <q>best</q> video and <q>best</q> audio (yt-dlp's choice), max video
+                          height of 720p.
                         </li>
                         <li>
                           <span className="settings-current">
                             {'bestvideo[height<=1080]+bestaudio/best[height<=1080]'}
                           </span>
-                          : best audio and max video height of 1080p.
+                          : <q>best</q> video and <q>best</q> audio (yt-dlp's choice), max video
+                          height of 1080p.
                         </li>
                         <li>
                           <span className="settings-current">
                             {'bestvideo[height<=1080][vcodec*=avc1]+bestaudio[acodec*=mp4a]/mp4'}
                           </span>
-                          : Max 1080p video height with iOS compatible video and audio codecs.
+                          : <q>best</q> universally iOS-compatible video (forced avc1) and{' '}
+                          <q>best</q> audio (forced mp4a), mp4 container, max video height of 1080p.
+                        </li>
+                        <li>
+                          <span className="settings-current">
+                            'bv*[vcodec~=av01]+ba[acodec~=mp4a]/bv*[vcodec~=av01]+ba/
+                            bv*[vcodec~=avc1]+ba[acodec~=mp4a]/bv*[vcodec~=avc1]+ba/bv*+ba/b'
+                          </span>
+                          : <q>best</q> iOS-compatible video (av01, compatible with iPhone 15 Pro
+                          and newer) and <q>best</q> audio (mp4a), no max video height, with
+                          fallback to avc1 and other formats if necessary.
                         </li>
                         <li>This can also be configured on a per channel basis.</li>
                         <li>
@@ -547,6 +561,7 @@ const SettingsApplication = () => {
                       Indexing subtitles add the fulltext to the ES index. Not recommended on low
                       end hardware.
                     </li>
+                    <li>Embed subtitles adds the subtitles to the mp4 file.</li>
                   </ul>
                 </div>
               )}
@@ -602,6 +617,16 @@ const SettingsApplication = () => {
                     <ToggleConfig
                       name="downloads.subtitle_index"
                       value={indexSubtitles}
+                      updateCallback={handleUpdateConfig}
+                    />
+                  </div>
+                  <div className="settings-box-wrapper">
+                    <div>
+                      <p>Embed Subtitles</p>
+                    </div>
+                    <ToggleConfig
+                      name="downloads.add_subtitles"
+                      value={embedSubtitles}
                       updateCallback={handleUpdateConfig}
                     />
                   </div>
