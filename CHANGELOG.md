@@ -5,6 +5,41 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.5.8-bmcd02] - 2025-11-13
+
+### Added
+- **Enhanced Media Stream Metadata Display** - Significantly improved media stream information on video pages
+  - Added subtitle stream detection and display
+  - Added thumbnail stream detection (attached_pic)
+  - Added language metadata for video, audio, and subtitle streams
+  - Improved conditional rendering in frontend for different stream types
+  - Better handling of streams without bitrate data
+  - Commits: 7d66f8bc
+
+### Changed
+- **Frontend Tooling** - Added missing `@eslint/js` v9.33.0 dependency for ESLint support
+  - Commits: c18aff4c
+
+### Technical Details
+
+#### Files Modified
+**Backend:**
+- `backend/video/serializers.py` - Updated StreamItemSerializer to support subtitle type and language field
+- `backend/video/src/media_streams.py` - Added subtitle/thumbnail extraction, language metadata
+
+**Frontend:**
+- `frontend/package.json` - Added @eslint/js dependency
+- `frontend/src/pages/Home.tsx` - Updated StreamType TypeScript definitions
+- `frontend/src/pages/Video.tsx` - Enhanced stream display with conditional rendering
+
+#### Benefits
+- Users can now see all embedded streams (video, audio, subtitles, thumbnails)
+- Language information helps identify multi-language content
+- More robust handling of various media container formats
+- Complements the subtitle embedding feature by showing which subtitles are present
+
+---
+
 ## [v0.5.8-bmcd01] - 2025-11-13
 
 ### Added
