@@ -144,7 +144,8 @@ class VideoDownloader(DownloaderBase):
             message = "processing"
 
         if self.task:
-            title = response["info_dict"]["title"]
+            info_dict = response.get("info_dict", {})
+            title = info_dict.get("title", "Processing")
             self.task.send_progress([title, message], progress=progress)
 
     def _build_obs(self):
@@ -161,9 +162,11 @@ class VideoDownloader(DownloaderBase):
             "progress_hooks": [self._progress_hook],
             "noprogress": True,
             "continuedl": True,
+            "writesubtitles": False,
             "writethumbnail": False,
             "noplaylist": True,
             "color": "no_color",
+            "subtitleslangs": [],
         }
 
     def _build_obs_user(self):
@@ -188,22 +191,11 @@ class VideoDownloader(DownloaderBase):
         postprocessors = []
 
         if self.config["downloads"]["add_metadata"]:
+            # full metadata is added in DownloadPostProcess
             postprocessors.append(
                 {
                     "key": "FFmpegMetadata",
                     "add_chapters": True,
-                    "add_metadata": True,
-                }
-            )
-            postprocessors.append(
-                {
-                    "key": "MetadataFromField",
-                    "formats": [
-                        "%(title)s:%(meta_title)s",
-                        "%(uploader)s:%(meta_artist)s",
-                        ":(?P<album>)",
-                    ],
-                    "when": "pre_process",
                 }
             )
 
@@ -215,6 +207,16 @@ class VideoDownloader(DownloaderBase):
                 }
             )
             self.obs["writethumbnail"] = True
+
+        if self.config["downloads"]["add_subtitles"]:
+            postprocessors.append(
+                {
+                    "key": "FFmpegEmbedSubtitle",
+                    "already_have_subtitle": True,
+                }
+            )
+            self.obs["subtitleslangs"] = [self.config["downloads"]["subtitle"]]
+            self.obs["writesubtitles"] = True
 
         self.obs["postprocessors"] = postprocessors
 
@@ -303,6 +305,9 @@ class DownloadPostProcess(DownloaderBase):
         self.refresh_playlist()
         self.match_videos()
         self.get_comments()
+        self.embed_metadata()
+
+        RedisQueue(self.VIDEO_QUEUE).clear()
 
     def auto_delete_all(self):
         """handle auto delete"""
@@ -488,6 +493,26 @@ class DownloadPostProcess(DownloaderBase):
         video_queue = RedisQueue(self.VIDEO_QUEUE)
         comment_list = CommentList(task=self.task)
         comment_list.add(video_ids=video_queue.get_all())
-
-        video_queue.clear()
         comment_list.index()
+
+    def embed_metadata(self):
+        """embed metadata in media file"""
+        if not self.config["downloads"].get("add_metadata"):
+            return
+
+        queue = RedisQueue(self.VIDEO_QUEUE)
+        total = queue.max_score()
+        video_ids = queue.get_all()
+
+        for idx, youtube_id in enumerate(video_ids):
+            YoutubeVideo(youtube_id).embed_metadata()
+
+            if not self.task:
+                continue
+
+            message = [
+                "Post Processing Videos.",
+                f"Embed metadata: - {idx}/{total}",
+            ]
+            progress = idx / total
+            self.task.send_progress(message, progress=progress)

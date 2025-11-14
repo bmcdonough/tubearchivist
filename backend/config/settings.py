@@ -16,6 +16,7 @@ from pathlib import Path
 
 from common.src.env_settings import EnvironmentSettings
 from common.src.helper import ta_host_parser
+from common.src.ta_redis import RedisArchivist
 from corsheaders.defaults import default_headers
 
 try:
@@ -76,6 +77,7 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "corsheaders.middleware.CorsMiddleware",
+    "config.middleware.StartTimeMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -220,10 +222,17 @@ CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_HEADERS = list(default_headers) + [
     "mode",
 ]
+CORS_EXPOSE_HEADERS = ["X-Start-Timestamp"]
+
 
 # TA application settings
 TA_UPSTREAM = "https://github.com/tubearchivist/tubearchivist"
-TA_VERSION = "v0.5.8-unstable"
+TA_VERSION = "v0.5.8"
+try:
+    TA_START = RedisArchivist().get_message_str("STARTTIMESTAMP")
+except ValueError:
+    # fails in unittests bootstrap
+    pass
 
 # API
 REST_FRAMEWORK = {
