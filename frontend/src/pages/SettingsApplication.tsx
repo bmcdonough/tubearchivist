@@ -55,6 +55,7 @@ const SettingsApplication = () => {
   // Download Format
   const [downloadsFormat, setDownloadsFormat] = useState<string | null>(null);
   const [downloadsFormatSort, setDownloadsFormatSort] = useState<string | null>(null);
+  const [downloadsExtractorArgs, setDownloadsExtractorArgs] = useState<string | null>(null);
   const [downloadsExtractorLang, setDownloadsExtractorLang] = useState<string | null>(null);
   const [embedMetadata, setEmbedMetadata] = useState(false);
   const [embedSubtitles, setEmbedSubtitles] = useState(false);
@@ -74,6 +75,7 @@ const SettingsApplication = () => {
   const [showCookieForm, setShowCookieForm] = useState<boolean>(false);
   const [poTokenFormData, setPoTokenFormData] = useState<string>('web+');
   const [showPoTokenForm, setShowPoTokenForm] = useState<boolean>(false);
+  const [potProviderUrl, setPotProviderUrl] = useState<string | null>(null);
 
   // Integrations
   const [showApiToken, setShowApiToken] = useState(false);
@@ -114,6 +116,7 @@ const SettingsApplication = () => {
     // Download Format
     setDownloadsFormat(appSettingsConfigData?.downloads.format || null);
     setDownloadsFormatSort(appSettingsConfigData?.downloads.format_sort || null);
+    setDownloadsExtractorArgs(appSettingsConfigData?.downloads.extractor_args || null);
     setDownloadsExtractorLang(appSettingsConfigData?.downloads.extractor_lang || null);
     setEmbedMetadata(appSettingsConfigData?.downloads.add_metadata || false);
     setEmbedSubtitles(appSettingsConfigData?.downloads.add_subtitles || false);
@@ -127,6 +130,9 @@ const SettingsApplication = () => {
     // Comments
     setCommentsMax(appSettingsConfigData?.downloads.comment_max || null);
     setCommentsSort(appSettingsConfigData?.downloads.comment_sort || '');
+
+    // Cookie
+    setPotProviderUrl(appSettingsConfigData?.downloads.pot_provider_url || null);
 
     // Integrations
     setDownloadDislikes(appSettingsConfigData?.downloads.integrate_ryd || false);
@@ -459,6 +465,28 @@ const SettingsApplication = () => {
                       </ul>
                     </li>
                     <li>
+                      Extractor Arguments to be passed at runtime
+                      <ul>
+                        <li>Some extractors accept additional arguments</li>
+                        <li>Separate multiple extractors with a space</li>
+                        <li>
+                          <span className="settings-current">
+                            EXTRACTOR1:ARG1=VAL1,VAL2;ARG2=VAL3 EXTRACTOR2:ARG3=VAL4
+                          </span>
+                        </li>
+                        <li>
+                          More details{' '}
+                          <a
+                            target="_blank"
+                            href="https://github.com/yt-dlp/yt-dlp#extractor-arguments"
+                          >
+                            here
+                          </a>
+                          .
+                        </li>
+                      </ul>
+                    </li>
+                    <li>
                       Extractor language will change how a video gets indexed. Index language
                       configuration
                       <ul>
@@ -506,6 +534,19 @@ const SettingsApplication = () => {
                   value={downloadsFormatSort}
                   setValue={setDownloadsFormatSort}
                   oldValue={appSettingsConfig.downloads.format_sort}
+                  updateCallback={handleUpdateConfig}
+                />
+              </div>
+              <div className="settings-box-wrapper">
+                <div>
+                  <p>Extractor Arguments</p>
+                </div>
+                <InputConfig
+                  type="text"
+                  name="downloads.extractor_args"
+                  value={downloadsExtractorArgs}
+                  setValue={setDownloadsExtractorArgs}
+                  oldValue={appSettingsConfig.downloads.extractor_args}
                   updateCallback={handleUpdateConfig}
                 />
               </div>
@@ -724,6 +765,16 @@ const SettingsApplication = () => {
                         PO guide
                       </a>
                     </li>
+                    <li>
+                      The PO Token Provider URL running external to tubearchivist. Make sure to
+                      review{' '}
+                      <a
+                        target="_blank"
+                        href="https://docs.tubearchivist.com/settings/application/#po-token-provider-url"
+                      >
+                        User Guide
+                      </a>
+                    </li>
                   </ul>
                 </div>
               )}
@@ -822,6 +873,19 @@ const SettingsApplication = () => {
                     </div>
                   )}
                 </div>
+              </div>
+              <div className="settings-box-wrapper">
+                <div>
+                  <p>PO Token Provider URL</p>
+                </div>
+                <InputConfig
+                  type="text"
+                  name="downloads.pot_provider_url"
+                  value={potProviderUrl}
+                  setValue={setPotProviderUrl}
+                  oldValue={appSettingsConfig.downloads.pot_provider_url}
+                  updateCallback={handleUpdateConfig}
+                />
               </div>
             </div>
             <div className="info-box-item">
