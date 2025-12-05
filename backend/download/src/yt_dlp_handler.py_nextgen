@@ -40,7 +40,7 @@ class DownloaderBase:
     PLAYLIST_QUICK = "download:playlist:quick"
     VIDEO_QUEUE = "download:video"
 
-    def __init__(self, task=None):
+    def __init__(self, task):
         self.task = task
         self.config = AppConfig().config
         self.channel_overwrites = get_channel_overwrites()
@@ -192,11 +192,22 @@ class VideoDownloader(DownloaderBase):
         postprocessors = []
 
         if self.config["downloads"]["add_metadata"]:
-            # full metadata is added in DownloadPostProcess
             postprocessors.append(
                 {
                     "key": "FFmpegMetadata",
                     "add_chapters": True,
+                    "add_metadata": True,
+                }
+            )
+            postprocessors.append(
+                {
+                    "key": "MetadataFromField",
+                    "formats": [
+                        "%(title)s:%(meta_title)s",
+                        "%(uploader)s:%(meta_artist)s",
+                        ":(?P<album>)",
+                    ],
+                    "when": "pre_process",
                 }
             )
 
@@ -208,18 +219,6 @@ class VideoDownloader(DownloaderBase):
                 }
             )
             self.obs["writethumbnail"] = True
-
-        #        if self.config["downloads"]["add_subtitles"]:
-        #            postprocessors.append(
-        #                {
-        #                    "key": "FFmpegEmbedSubtitle",
-        #                    "already_have_subtitle": True,
-        #                }
-        #            )
-        #            self.obs["subtitleslangs"] = [
-        #                self.config["downloads"]["subtitle"]
-        #            ]
-        #            self.obs["writesubtitles"] = True
 
         self.obs["postprocessors"] = postprocessors
 
@@ -276,6 +275,15 @@ class VideoDownloader(DownloaderBase):
         if host_uid and host_gid:
             os.chown(new_path, host_uid, host_gid)
 
+    def _embed_subtitles(self, youtube_id, video_type):
+        """embed subtitles into video after indexing completes"""
+        from video.src.subtitle import YoutubeSubtitle
+
+        video = YoutubeVideo(youtube_id, video_type=video_type)
+        video.get_from_es()
+        handler = YoutubeSubtitle(video)
+        handler.embed_subtitles()
+
     @staticmethod
     def _delete_from_pending(youtube_id):
         """delete downloaded video from pending index if its there"""
@@ -308,9 +316,6 @@ class DownloadPostProcess(DownloaderBase):
         self.refresh_playlist()
         self.match_videos()
         self.get_comments()
-        self.embed_metadata()
-
-        RedisQueue(self.VIDEO_QUEUE).clear()
 
     def auto_delete_all(self):
         """handle auto delete"""
@@ -397,9 +402,6 @@ class DownloadPostProcess(DownloaderBase):
             try:
                 playlist = YoutubePlaylist(playlist_id)
                 playlist.update_playlist(skip_on_empty=True)
-                if not playlist.json_data:
-                    raise ValueError("no json data extracted for playlist")
-
             except ValueError as err:
                 message = [
                     f"{playlist_id}: skip failed playlist import",
@@ -483,7 +485,6 @@ class DownloadPostProcess(DownloaderBase):
             playlist.get_from_es()
             playlist.add_vids_to_playlist()
             playlist.remove_vids_from_playlist()
-            playlist.match_local()
 
             if not self.task:
                 continue
@@ -500,26 +501,6 @@ class DownloadPostProcess(DownloaderBase):
         video_queue = RedisQueue(self.VIDEO_QUEUE)
         comment_list = CommentList(task=self.task)
         comment_list.add(video_ids=video_queue.get_all())
+
+        video_queue.clear()
         comment_list.index()
-
-    def embed_metadata(self):
-        """embed metadata in media file"""
-        if not self.config["downloads"].get("add_metadata"):
-            return
-
-        queue = RedisQueue(self.VIDEO_QUEUE)
-        total = queue.max_score()
-        video_ids = queue.get_all()
-
-        for idx, youtube_id in enumerate(video_ids):
-            YoutubeVideo(youtube_id).embed_metadata()
-
-            if not self.task:
-                continue
-
-            message = [
-                "Post Processing Videos.",
-                f"Embed metadata: - {idx}/{total}",
-            ]
-            progress = idx / total
-            self.task.send_progress(message, progress=progress)

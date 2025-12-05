@@ -14,7 +14,7 @@ from operator import itemgetter
 
 import requests
 from common.src.env_settings import EnvironmentSettings
-from common.src.es_connect import ElasticWrap, IndexPaginate
+from common.src.es_connect import ElasticWrap
 from common.src.helper import rand_sleep, requests_headers
 from yt_dlp.utils import orderedSet_from_options
 
@@ -94,14 +94,6 @@ class YoutubeSubtitle:
 
         return candidate_subtitles
 
-    def get_es_subtitles(self) -> list[dict]:
-        """get subtitles from elastic"""
-        data = {
-            "query": {"term": {"youtube_id": {"value": self.video.youtube_id}}}
-        }
-        response = IndexPaginate("ta_subtitle", data).get_results()
-        return response
-
     def download_subtitles(self, relevant_subtitles):
         """download subtitle files to archive"""
         subtitle_list = ", ".join(map(itemgetter("lang"), relevant_subtitles))
@@ -148,40 +140,22 @@ class YoutubeSubtitle:
 
     def embed_subtitles(self):
         """embed downloaded subtitle files into video using ffmpeg"""
-        if not self._should_embed_subtitles():
+        if not self.video.config["downloads"]["add_subtitles"]:
+            return
+
+        subtitles = self.video.json_data.get("subtitles")
+        if not subtitles:
             return
 
         youtube_id = self.video.youtube_id
         videos_base = EnvironmentSettings.MEDIA_DIR
-        video_path = os.path.join(
-            videos_base, self.video.json_data["media_url"]
-        )
+        video_path = os.path.join(videos_base, self.video.json_data["media_url"])
 
         if not os.path.exists(video_path):
-            print(
-                f"{youtube_id}: video file not found for embedding subtitles"
-            )
+            print(f"{youtube_id}: video file not found for embedding subtitles")
             return
 
-        ffmpeg_cmd = self._build_ffmpeg_command(
-            video_path, videos_base, self.video.json_data.get("subtitles")
-        )
-        if not ffmpeg_cmd:
-            print(f"{youtube_id}: no subtitle files found for embedding")
-            return
-
-        self._run_ffmpeg_embed(youtube_id, video_path, ffmpeg_cmd)
-
-    def _should_embed_subtitles(self):
-        """check if subtitles should be embedded"""
-        if not self.video.config["downloads"]["add_subtitles"]:
-            return False
-        if not self.video.json_data.get("subtitles"):
-            return False
-        return True
-
-    def _build_ffmpeg_command(self, video_path, videos_base, subtitles):
-        """build ffmpeg command for embedding subtitles"""
+        # Build ffmpeg command
         input_files = ["-i", video_path]
         subtitle_maps = ["-map", "0:v", "-map", "0:a"]
         subtitle_metadata = []
@@ -192,39 +166,43 @@ class YoutubeSubtitle:
                 input_files.extend(["-i", subtitle_file])
                 subtitle_maps.extend(["-map", str(idx + 1)])
                 lang = subtitle.get("lang", "und")
-                subtitle_metadata.extend(
-                    [f"-metadata:s:s:{idx}", f"language={lang}"]
-                )
+                subtitle_metadata.extend([
+                    f"-metadata:s:s:{idx}",
+                    f"language={lang}"
+                ])
 
-        if len(input_files) == 2:
-            return None
+        if len(input_files) == 2:  # Only original video, no subtitles to embed
+            print(f"{youtube_id}: no subtitle files found for embedding")
+            return
 
+        # Create temporary output file
         temp_video_path = video_path + ".tmp.mp4"
-        return [
+
+        ffmpeg_cmd = [
             "ffmpeg",
-            "-y",
+            "-y",  # Overwrite output file
             *input_files,
             *subtitle_maps,
-            "-c:v",
-            "copy",
-            "-c:a",
-            "copy",
-            "-c:s",
-            "mov_text",
+            "-c:v", "copy",  # Copy video codec
+            "-c:a", "copy",  # Copy audio codec
+            "-c:s", "mov_text",  # Subtitle codec for mp4
             *subtitle_metadata,
-            temp_video_path,
+            temp_video_path
         ]
 
-    def _run_ffmpeg_embed(self, youtube_id, video_path, ffmpeg_cmd):
-        """execute ffmpeg to embed subtitles"""
-        temp_video_path = video_path + ".tmp.mp4"
         try:
             print(f"{youtube_id}: embedding subtitles into video")
-            subprocess.run(
-                ffmpeg_cmd, capture_output=True, text=True, check=True
+            result = subprocess.run(
+                ffmpeg_cmd,
+                capture_output=True,
+                text=True,
+                check=True
             )
+
+            # Replace original file with embedded version
             os.replace(temp_video_path, video_path)
 
+            # Fix permissions
             host_uid = EnvironmentSettings.HOST_UID
             host_gid = EnvironmentSettings.HOST_GID
             if host_uid and host_gid:
@@ -234,6 +212,7 @@ class YoutubeSubtitle:
 
         except subprocess.CalledProcessError as e:
             print(f"{youtube_id}: failed to embed subtitles: {e.stderr}")
+            # Clean up temp file if it exists
             if os.path.exists(temp_video_path):
                 os.remove(temp_video_path)
         except Exception as e:
