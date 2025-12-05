@@ -28,6 +28,7 @@ from playlist.src.index import YoutubePlaylist
 from video.src.comments import CommentList
 from video.src.constants import VideoTypeEnum
 from video.src.index import YoutubeVideo, index_new_video
+from video.src.subtitle import YoutubeSubtitle
 
 
 class DownloaderBase:
@@ -275,6 +276,13 @@ class VideoDownloader(DownloaderBase):
         shutil.move(old_path, new_path, copy_function=shutil.copyfile)
         if host_uid and host_gid:
             os.chown(new_path, host_uid, host_gid)
+
+    def _embed_subtitles(self, youtube_id, video_type):
+        """embed subtitles into video file"""
+        video = YoutubeVideo(youtube_id, video_type=video_type)
+        video.build_json()
+        subtitle_handler = YoutubeSubtitle(video)
+        subtitle_handler.embed_subtitles()
 
     @staticmethod
     def _delete_from_pending(youtube_id):
