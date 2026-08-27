@@ -13,8 +13,12 @@ fi
 if [[ "${TA_AUTO_UPDATE_YTDLP,,}" =~ ^(release|nightly)$ ]]; then
     echo "Updating yt-dlp..."
     preflag=$([[ "${TA_AUTO_UPDATE_YTDLP,,}" == "nightly" ]] && echo "--pre" || echo "")
-    python -m pip install --target=/root/.local/bin --upgrade $preflag "yt-dlp[default]" || {
+    python -m pip install --user --upgrade $preflag "yt-dlp[default]" || {
         echo "yt-dlp update failed"
+    }
+    echo "Updating bgutil-ytdlp-pot-provider..."
+    python -m pip install --user --upgrade bgutil-ytdlp-pot-provider || {
+        echo "bgutil-ytdlp-pot-provider update failed"
     }
 fi
 
